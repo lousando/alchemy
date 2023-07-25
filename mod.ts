@@ -68,9 +68,7 @@ filesToConvert.map(async (file) => {
       ],
     }).status();
 
-    // todo: remove old SRT file
     await Deno.remove(filePath);
+    console.log("Converted: ", filePath);
   }
 });
-
-// todo: convert SRT files to VTT
