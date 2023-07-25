@@ -37,44 +37,9 @@ filesToConvert.map(async (file) => {
 
     await Deno.remove(filePath);
     console.log("Converted to mkv: ", filePath);
+    await cleanMKV(`${file.dir + file.name}.mkv`);
   } else if (extension === ".mkv" || extension === ".webm") {
-    await Deno.run({
-      stdout: "piped",
-      stdin: "null", // ignore this program's input
-      stderr: "null", // ignore this program's input
-      cmd: [
-        "mkvpropedit",
-        "-d",
-        "title",
-        filePath,
-      ],
-    }).status();
-
-    // make backup
-    await Deno.rename(filePath, `${filePath}.backup`);
-
-    // remove video subs
-    const removeSubsTask = Deno.run({
-      stdout: "piped",
-      stdin: "null", // ignore this program's input
-      stderr: "null", // ignore this program's input
-      cmd: [
-        "mkvmerge",
-        "-o",
-        filePath,
-        "--no-subtitles",
-        `${filePath}.backup`,
-      ],
-    });
-
-    if (await removeSubsTask.status()) {
-      await Deno.remove(`${filePath}.backup`);
-      console.log("Cleaned: ", filePath);
-    } else {
-      // task failed, restore backup
-      await Deno.rename(`${filePath}.backup`, filePath);
-      console.error("Failed to clean: ", filePath);
-    }
+    await cleanMKV(filePath);
   } else if (extension === ".srt") {
     // convert external subs
     await Deno.run({
@@ -93,3 +58,47 @@ filesToConvert.map(async (file) => {
     console.log("Converted: ", filePath);
   }
 });
+
+/**
+ * Util
+ */
+
+async function cleanMKV(filePath = "") {
+  await Deno.run({
+    stdout: "piped",
+    stdin: "null", // ignore this program's input
+    stderr: "null", // ignore this program's input
+    cmd: [
+      "mkvpropedit",
+      "-d",
+      "title",
+      filePath,
+    ],
+  }).status();
+
+  // make backup
+  await Deno.rename(filePath, `${filePath}.backup`);
+
+  // remove video subs
+  const removeSubsTask = Deno.run({
+    stdout: "piped",
+    stdin: "null", // ignore this program's input
+    stderr: "null", // ignore this program's input
+    cmd: [
+      "mkvmerge",
+      "-o",
+      filePath,
+      "--no-subtitles",
+      `${filePath}.backup`,
+    ],
+  });
+
+  if (await removeSubsTask.status()) {
+    await Deno.remove(`${filePath}.backup`);
+    console.log("Cleaned: ", filePath);
+  } else {
+    // task failed, restore backup
+    await Deno.rename(`${filePath}.backup`, filePath);
+    console.error("Failed to clean: ", filePath);
+  }
+}
