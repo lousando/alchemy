@@ -16,7 +16,7 @@ filesToConvert.map(async (file) => {
   const filePath = file.dir + file.base;
   const extension = file.ext.toLowerCase();
 
-  if (extension === ".mkv") {
+  if (extension === ".mkv" || extension === ".webm") {
     await Deno.run({
       stdout: "piped",
       stdin: "null", // ignore this program's input
