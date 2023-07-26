@@ -14,6 +14,13 @@ const filesToConvert: Array<ParsedPath> = args._.map((f) =>
 
 filesToConvert.map(async (file) => {
   const filePath = file.dir + file.base;
+  const { isDirectory } = await Deno.stat(filePath);
+
+  if (isDirectory) {
+    // skip this
+    return;
+  }
+
   const extension = file.ext.toLowerCase();
 
   // convert to MkV
