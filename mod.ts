@@ -62,7 +62,7 @@ for (const file of filesToConvert) {
     }).status();
 
     await Deno.remove(filePath);
-    console.log("Converted: ", filePath);
+    console.log("Converted to vtt: ", filePath);
   }
 }
 
