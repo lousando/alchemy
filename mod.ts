@@ -18,7 +18,7 @@ for (const file of filesToConvert) {
 
   if (isDirectory) {
     // skip this
-    return;
+    continue;
   }
 
   const extension = file.ext.toLowerCase();
