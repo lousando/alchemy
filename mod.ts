@@ -12,7 +12,7 @@ const filesToConvert: Array<ParsedPath> = args._.map((f) =>
   parsePath(String(f))
 );
 
-filesToConvert.map(async (file) => {
+for (const file of filesToConvert) {
   const filePath = file.dir + file.base;
   const { isDirectory } = await Deno.stat(filePath);
 
@@ -64,7 +64,7 @@ filesToConvert.map(async (file) => {
     await Deno.remove(filePath);
     console.log("Converted: ", filePath);
   }
-});
+}
 
 /**
  * Util
