@@ -42,9 +42,9 @@ for (const file of filesToConvert) {
       ],
     }).status();
 
-    await Deno.remove(filePath);
     console.log("Converted to mkv: ", filePath);
     await cleanMKV(`${file.dir + file.name}.mkv`);
+    await Deno.remove(filePath);
   } else if (extension === ".mkv" || extension === ".webm") {
     await cleanMKV(filePath);
   } else if (extension === ".srt") {
