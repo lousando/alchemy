@@ -2,6 +2,7 @@
 
 import { parse as parseFlags } from "std/flags/mod.ts";
 import { ParsedPath } from "std/path/mod.ts";
+import { SEP } from "std/path/separator.ts";
 import { parse as parsePath } from "std/path/posix.ts";
 
 const args = parseFlags(Deno.args, {
@@ -13,10 +14,10 @@ const filesToConvert: Array<ParsedPath> = args._.map((f) =>
 );
 
 for (const file of filesToConvert) {
-  const filePath = file.dir + file.base;
-  const { isDirectory } = await Deno.stat(filePath);
+  const filePath = `${file.dir}${SEP}${file.base}`;
+  const fileInfo = await Deno.stat(filePath);
 
-  if (isDirectory) {
+  if (fileInfo.isDirectory) {
     // skip this
     continue;
   }
@@ -38,12 +39,12 @@ for (const file of filesToConvert) {
         "copy",
         "-c:a",
         "copy",
-        `${file.dir + file.name}.mkv`,
+        `${file.dir + SEP + file.name}.mkv`,
       ],
     }).status();
 
     console.log("Converted to mkv: ", filePath);
-    await cleanMKV(`${file.dir + file.name}.mkv`);
+    await cleanMKV(`${file.dir + SEP + file.name}.mkv`);
     await Deno.remove(filePath);
   } else if (extension === ".mkv" || extension === ".webm") {
     await cleanMKV(filePath);
@@ -57,7 +58,7 @@ for (const file of filesToConvert) {
         "ffmpeg",
         "-i",
         filePath,
-        `${file.dir + file.name}.vtt`,
+        `${file.dir + SEP + file.name}.vtt`,
       ],
     }).status();
 
