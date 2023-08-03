@@ -39,6 +39,7 @@ for (const file of filesToConvert) {
         "copy",
         "-c:a",
         "copy",
+        "-sn", // no subs
         `${file.dir + SEP + file.name}.mkv`,
       ],
     }).status();
@@ -72,32 +73,27 @@ for (const file of filesToConvert) {
  */
 
 async function cleanMKV(filePath = "") {
-  await Deno.run({
-    stdout: "piped",
-    stdin: "null", // ignore this program's input
-    stderr: "null", // ignore this program's input
-    cmd: [
-      "mkvpropedit",
-      "-d",
-      "title",
-      filePath,
-    ],
-  }).status();
-
   // make backup
   await Deno.rename(filePath, `${filePath}.backup`);
 
-  // remove video subs
+  // remove video subs and title metadata
   const removeSubsTask = Deno.run({
     stdout: "piped",
     stdin: "null", // ignore this program's input
     stderr: "null", // ignore this program's input
     cmd: [
-      "mkvmerge",
-      "-o",
-      filePath,
-      "--no-subtitles",
+      "ffmpeg",
+      "-i",
       `${filePath}.backup`,
+      "-c",
+      "copy",
+      "-sn", // no subs
+      /**
+       * no title
+       */
+      "-metadata",
+      "title=''",
+      filePath,
     ],
   });
 
