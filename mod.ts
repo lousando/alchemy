@@ -92,7 +92,7 @@ async function cleanMKV(filePath = "") {
        * no title
        */
       "-metadata",
-      "title=''",
+      "title=",
       filePath,
     ],
   });
