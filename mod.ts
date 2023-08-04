@@ -117,6 +117,12 @@ async function cleanVTT(filePath = "") {
   }
 
   if (
+      vttContents.includes("http")
+  ) {
+    console.warn(`${filePath} contains "http"`);
+  }
+
+  if (
     vttContents.includes("subtitle")
   ) {
     console.warn(`${filePath} contains "subtitle"`);
