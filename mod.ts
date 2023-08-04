@@ -50,6 +50,8 @@ for (const file of filesToConvert) {
   } else if (extension === ".mkv" || extension === ".webm") {
     await cleanMKV(filePath);
   } else if (extension === ".srt") {
+    const vttFilename = `${file.dir + SEP + file.name}.vtt`;
+
     // convert external subs
     await Deno.run({
       stdout: "piped",
@@ -59,18 +61,67 @@ for (const file of filesToConvert) {
         "ffmpeg",
         "-i",
         filePath,
-        `${file.dir + SEP + file.name}.vtt`,
+        vttFilename,
       ],
     }).status();
 
     await Deno.remove(filePath);
     console.log("Converted to vtt: ", filePath);
+    await cleanVTT(vttFilename);
+  } else if (extension === ".vtt") {
+    await cleanVTT(filePath);
   }
 }
 
 /**
  * Util
  */
+
+async function cleanVTT(filePath = "") {
+  const vttContents = await Deno.readTextFile(filePath);
+
+  if (
+    vttContents.includes("4KVOD.TV")
+  ) {
+    console.warn(`${filePath} contains "4KVOD.TV"`);
+  }
+
+  if (
+    vttContents.includes("ecOtOne")
+  ) {
+    console.warn(`${filePath} contains "ecOtOne"`);
+  }
+
+  if (
+    vttContents.includes("P@rM!NdeR M@nkÖÖ")
+  ) {
+    console.warn(`${filePath} contains "P@rM!NdeR M@nkÖÖ"`);
+  }
+
+  if (
+    vttContents.includes("@fashionstyles_4u")
+  ) {
+    console.warn(`${filePath} contains "@fashionstyles_4u"`);
+  }
+
+  if (
+    vttContents.includes("@")
+  ) {
+    console.warn(`${filePath} contains "@"`);
+  }
+
+  if (
+    vttContents.includes("copyright")
+  ) {
+    console.warn(`${filePath} contains "copyright"`);
+  }
+
+  if (
+    vttContents.includes("subtitle")
+  ) {
+    console.warn(`${filePath} contains "subtitle"`);
+  }
+}
 
 async function cleanMKV(filePath = "") {
   // make backup
