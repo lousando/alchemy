@@ -87,6 +87,12 @@ async function cleanVTT(filePath = "") {
   }
 
   if (
+    vttContents.includes("explosiveskull")
+  ) {
+    danger(`${filePath} contains "explosiveskull"`);
+  }
+
+  if (
     vttContents.includes("ecOtOne")
   ) {
     danger(`${filePath} contains "ecOtOne"`);
