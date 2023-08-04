@@ -83,49 +83,49 @@ async function cleanVTT(filePath = "") {
   if (
     vttContents.includes("4KVOD.TV")
   ) {
-    console.warn(`${filePath} contains "4KVOD.TV"`);
+    danger(`${filePath} contains "4KVOD.TV"`);
   }
 
   if (
     vttContents.includes("ecOtOne")
   ) {
-    console.warn(`${filePath} contains "ecOtOne"`);
+    danger(`${filePath} contains "ecOtOne"`);
   }
 
   if (
     vttContents.includes("P@rM!NdeR M@nkÖÖ")
   ) {
-    console.warn(`${filePath} contains "P@rM!NdeR M@nkÖÖ"`);
+    danger(`${filePath} contains "P@rM!NdeR M@nkÖÖ"`);
   }
 
   if (
     vttContents.includes("@fashionstyles_4u")
   ) {
-    console.warn(`${filePath} contains "@fashionstyles_4u"`);
+    danger(`${filePath} contains "@fashionstyles_4u"`);
+  }
+
+  if (
+    vttContents.includes("http")
+  ) {
+    danger(`${filePath} contains "http"`);
   }
 
   if (
     vttContents.includes("@")
   ) {
-    console.warn(`${filePath} contains "@"`);
+    warn(`${filePath} contains "@"`);
   }
 
   if (
     vttContents.includes("copyright")
   ) {
-    console.warn(`${filePath} contains "copyright"`);
-  }
-
-  if (
-      vttContents.includes("http")
-  ) {
-    console.warn(`${filePath} contains "http"`);
+    warn(`${filePath} contains "copyright"`);
   }
 
   if (
     vttContents.includes("subtitle")
   ) {
-    console.warn(`${filePath} contains "subtitle"`);
+    warn(`${filePath} contains "subtitle"`);
   }
 }
 
@@ -162,4 +162,12 @@ async function cleanMKV(filePath = "") {
     await Deno.rename(`${filePath}.backup`, filePath);
     console.error("Failed to clean: ", filePath);
   }
+}
+
+function warn(message = "") {
+  console.log(`%c${message}`, "color: yellow");
+}
+
+function danger(message = "") {
+  console.log(`%c${message}`, "color: red");
 }
