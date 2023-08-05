@@ -50,26 +50,7 @@ for (const file of filesToConvert) {
   } else if (extension === ".mkv" || extension === ".webm") {
     await cleanMKV(filePath);
   } else if (extension === ".srt") {
-    const vttFilename = `${file.dir + SEP + file.name}.vtt`;
-
-    // convert external subs
-    await Deno.run({
-      stdout: "piped",
-      stdin: "null", // ignore this program's input
-      stderr: "null", // ignore this program's input
-      cmd: [
-        "ffmpeg",
-        "-i",
-        filePath,
-        vttFilename,
-      ],
-    }).status();
-
-    await Deno.remove(filePath);
-    console.log("Converted to vtt: ", filePath);
-    await cleanVTT(vttFilename);
-  } else if (extension === ".vtt") {
-    await cleanVTT(filePath);
+    await cleanSRT(filePath);
   }
 }
 
@@ -77,59 +58,59 @@ for (const file of filesToConvert) {
  * Util
  */
 
-async function cleanVTT(filePath = "") {
-  const vttContents = await Deno.readTextFile(filePath);
+async function cleanSRT(filePath = "") {
+  const srtContents = await Deno.readTextFile(filePath);
 
   if (
-    vttContents.includes("4KVOD.TV")
+    srtContents.includes("4KVOD.TV")
   ) {
     danger(`${filePath} contains "4KVOD.TV"`);
   }
 
   if (
-    vttContents.includes("explosiveskull")
+    srtContents.includes("explosiveskull")
   ) {
     danger(`${filePath} contains "explosiveskull"`);
   }
 
   if (
-    vttContents.includes("ecOtOne")
+    srtContents.includes("ecOtOne")
   ) {
     danger(`${filePath} contains "ecOtOne"`);
   }
 
   if (
-    vttContents.includes("P@rM!NdeR M@nkÖÖ")
+    srtContents.includes("P@rM!NdeR M@nkÖÖ")
   ) {
     danger(`${filePath} contains "P@rM!NdeR M@nkÖÖ"`);
   }
 
   if (
-    vttContents.includes("@fashionstyles_4u")
+    srtContents.includes("@fashionstyles_4u")
   ) {
     danger(`${filePath} contains "@fashionstyles_4u"`);
   }
 
   if (
-    vttContents.includes("http")
+    srtContents.includes("http")
   ) {
     danger(`${filePath} contains "http"`);
   }
 
   if (
-    vttContents.includes("@")
+    srtContents.includes("@")
   ) {
     warn(`${filePath} contains "@"`);
   }
 
   if (
-    vttContents.includes("copyright")
+    srtContents.includes("copyright")
   ) {
     warn(`${filePath} contains "copyright"`);
   }
 
   if (
-    vttContents.includes("subtitle")
+    srtContents.includes("subtitle")
   ) {
     warn(`${filePath} contains "subtitle"`);
   }
