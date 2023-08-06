@@ -62,7 +62,7 @@ async function cleanSRT(filePath = "") {
   const srtContents = await Deno.readTextFile(filePath);
 
   if (
-    srtContents.includes("4KVOD.TV")
+    srtContents.match(/4KVOD\.TV/ig)
   ) {
     danger(`${filePath} contains "4KVOD.TV"`);
   }
@@ -92,7 +92,7 @@ async function cleanSRT(filePath = "") {
   }
 
   if (
-    srtContents.includes("http")
+    srtContents.match(/http/ig)
   ) {
     danger(`${filePath} contains "http"`);
   }
@@ -122,13 +122,13 @@ async function cleanSRT(filePath = "") {
   }
 
   if (
-    srtContents.includes("copyright")
+    srtContents.match(/copyright/ig)
   ) {
     warn(`${filePath} contains "copyright"`);
   }
 
   if (
-    srtContents.includes("subtitle")
+    srtContents.match(/subtitle/ig)
   ) {
     warn(`${filePath} contains "subtitle"`);
   }
