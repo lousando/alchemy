@@ -116,9 +116,15 @@ async function cleanSRT(filePath = "") {
   }
 
   if (
+      srtContents.match(/allsubs/ig)
+  ) {
+    danger(`${filePath} contains "AllSubs"`);
+  }
+
+  if (
     srtContents.match(/torrent/ig)
   ) {
-    danger(`${filePath} contains "torrent"`);
+    warn(`${filePath} contains "torrent"`);
   }
 
   if (
