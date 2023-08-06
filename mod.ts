@@ -98,6 +98,12 @@ async function cleanSRT(filePath = "") {
   }
 
   if (
+    srtContents.match(/uploaded by/ig)
+  ) {
+    danger(`${filePath} contains "uploaded by"`);
+  }
+
+  if (
     srtContents.includes("@")
   ) {
     warn(`${filePath} contains "@"`);
