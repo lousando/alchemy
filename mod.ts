@@ -116,6 +116,12 @@ async function cleanSRT(filePath = "") {
   }
 
   if (
+    srtContents.match(/torrent/ig)
+  ) {
+    danger(`${filePath} contains "torrent"`);
+  }
+
+  if (
     srtContents.includes("@")
   ) {
     warn(`${filePath} contains "@"`);
