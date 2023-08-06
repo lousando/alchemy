@@ -104,6 +104,18 @@ async function cleanSRT(filePath = "") {
   }
 
   if (
+    srtContents.match(/@gmail\.com/ig)
+  ) {
+    danger(`${filePath} contains "@gmail.com"`);
+  }
+
+  if (
+    srtContents.match(/@hotmail\.com/ig)
+  ) {
+    danger(`${filePath} contains "@hotmail.com"`);
+  }
+
+  if (
     srtContents.includes("@")
   ) {
     warn(`${filePath} contains "@"`);
