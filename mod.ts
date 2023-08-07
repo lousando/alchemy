@@ -5,6 +5,11 @@ import { ParsedPath } from "std/path/mod.ts";
 import { SEP } from "std/path/separator.ts";
 import { parse as parsePath } from "std/path/posix.ts";
 import { Database } from "aloedb";
+import { VTTCue, WebVTT } from "npm:vtt.js@0.13.0";
+
+const vttParser = new WebVTT.Parser({
+  VTTCue,
+}, WebVTT.StringDecoder());
 
 const args = parseFlags(Deno.args, {
   stopEarly: true, // populates "_"
@@ -20,7 +25,9 @@ interface Subtitle {
 }
 
 // init
-const database = new Database<Subtitle>(`${Deno.env.get("HOME")}/.clean_cow.json`);
+const database = new Database<Subtitle>(
+  `${Deno.env.get("HOME")}/.clean_cow.json`,
+);
 
 for (const file of filesToConvert) {
   const filePath = `${file.dir}${SEP}${file.base}`;
@@ -100,91 +107,105 @@ for (const file of filesToConvert) {
  */
 
 async function cleanVTT(filePath = "") {
-  const srtContents = await Deno.readTextFile(filePath);
+  const vttContents = await Deno.readTextFile(filePath);
 
-  if (
-    srtContents.match(/4KVOD\.TV/ig)
-  ) {
-    danger(`${filePath} contains "4KVOD.TV"`);
-  }
+  return new Promise((resolve, reject) => {
+    vttParser.onflush = resolve;
 
-  if (
-    srtContents.includes("explosiveskull")
-  ) {
-    danger(`${filePath} contains "explosiveskull"`);
-  }
+    vttParser.onparsingerror = (error) => reject(error);
 
-  if (
-    srtContents.includes("ecOtOne")
-  ) {
-    danger(`${filePath} contains "ecOtOne"`);
-  }
+    vttParser.oncue = function (cue) {
+      const cueText = cue.text;
 
-  if (
-    srtContents.includes("P@rM!NdeR M@nkÖÖ")
-  ) {
-    danger(`${filePath} contains "P@rM!NdeR M@nkÖÖ"`);
-  }
+      if (
+        cueText.match(/4KVOD\.TV/ig)
+      ) {
+        danger(`${filePath} contains "4KVOD.TV"`);
+      }
 
-  if (
-    srtContents.includes("@fashionstyles_4u")
-  ) {
-    danger(`${filePath} contains "@fashionstyles_4u"`);
-  }
+      if (
+        cueText.includes("explosiveskull")
+      ) {
+        danger(`${filePath} contains "explosiveskull"`);
+      }
 
-  if (
-    srtContents.match(/http/ig)
-  ) {
-    danger(`${filePath} contains "http"`);
-  }
+      if (
+        cueText.includes("ecOtOne")
+      ) {
+        danger(`${filePath} contains "ecOtOne"`);
+      }
 
-  if (
-    srtContents.match(/uploaded by/ig)
-  ) {
-    danger(`${filePath} contains "uploaded by"`);
-  }
+      if (
+        cueText.includes("P@rM!NdeR M@nkÖÖ")
+      ) {
+        danger(`${filePath} contains "P@rM!NdeR M@nkÖÖ"`);
+      }
 
-  if (
-    srtContents.match(/@gmail\.com/ig)
-  ) {
-    danger(`${filePath} contains "@gmail.com"`);
-  }
+      if (
+        cueText.includes("@fashionstyles_4u")
+      ) {
+        danger(`${filePath} contains "@fashionstyles_4u"`);
+      }
 
-  if (
-    srtContents.match(/@hotmail\.com/ig)
-  ) {
-    danger(`${filePath} contains "@hotmail.com"`);
-  }
+      if (
+        cueText.match(/http/ig)
+      ) {
+        danger(`${filePath} contains "http"`);
+      }
 
-  if (
-    srtContents.match(/allsubs/ig)
-  ) {
-    danger(`${filePath} contains "AllSubs"`);
-  }
+      if (
+        cueText.match(/uploaded by/ig)
+      ) {
+        danger(`${filePath} contains "uploaded by"`);
+      }
 
-  if (
-    srtContents.match(/torrent/ig)
-  ) {
-    warn(`${filePath} contains "torrent"`);
-  }
+      if (
+        cueText.match(/@gmail\.com/ig)
+      ) {
+        danger(`${filePath} contains "@gmail.com"`);
+      }
 
-  if (
-    srtContents.includes("@")
-  ) {
-    warn(`${filePath} contains "@"`);
-  }
+      if (
+        cueText.match(/@hotmail\.com/ig)
+      ) {
+        danger(`${filePath} contains "@hotmail.com"`);
+      }
 
-  if (
-    srtContents.match(/copyright/ig)
-  ) {
-    warn(`${filePath} contains "copyright"`);
-  }
+      if (
+        cueText.match(/allsubs/ig)
+      ) {
+        danger(`${filePath} contains "AllSubs"`);
+      }
 
-  if (
-    srtContents.match(/subtitle/ig)
-  ) {
-    warn(`${filePath} contains "subtitle"`);
-  }
+      if (
+        cueText.match(/torrent/ig)
+      ) {
+        warn(`${filePath} contains "torrent"`);
+      }
+
+      if (
+        cueText.includes("@")
+      ) {
+        warn(`${filePath} contains "@"`);
+      }
+
+      if (
+        cueText.match(/copyright/ig)
+      ) {
+        warn(`${filePath} contains "copyright"`);
+      }
+
+      if (
+        cueText.match(/subtitle/ig)
+      ) {
+        warn(`${filePath} contains "subtitle"`);
+      }
+    };
+
+    vttParser.parse(vttContents);
+
+    vttParser.flush();
+  });
 }
 
 async function cleanMKV(filePath = "") {
