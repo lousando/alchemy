@@ -28,10 +28,11 @@ const filesToConvert: Array<ParsedPath> = args._.map((f) =>
 // Structure of stored documents
 interface Subtitle {
   hash: string;
+  command: string;
 }
 
 // init
-const database = new Database<Subtitle>(
+const subTitleDatabase = new Database<Subtitle>(
   `${Deno.env.get("HOME")}/.clean_cow.json`,
 );
 
@@ -129,95 +130,55 @@ async function cleanVTT(filePath = "") {
         payload: cueText,
       });
 
-      const checksum = toHashString(
+      const hash = toHashString(
         await crypto.subtle.digest(
           "SHA-256",
           new TextEncoder().encode(cueText),
         ),
       );
 
-      if (
-        cueText.match(/4KVOD\.TV/ig)
-      ) {
-        danger(`${filePath} contains "4KVOD.TV"`);
+      const subtitleRecord: Subtitle = await subTitleDatabase.findOne({ hash });
+
+      if (subtitleRecord?.command === "delete") {
+        return;
+      }
+
+      if (subtitleRecord?.command === "keep") {
+        newVtt.add(newCue);
+        return;
       }
 
       if (
-        cueText.includes("explosiveskull")
-      ) {
-        danger(`${filePath} contains "explosiveskull"`);
-      }
-
-      if (
-        cueText.includes("ecOtOne")
-      ) {
-        danger(`${filePath} contains "ecOtOne"`);
-      }
-
-      if (
-        cueText.includes("P@rM!NdeR M@nkÖÖ")
-      ) {
-        danger(`${filePath} contains "P@rM!NdeR M@nkÖÖ"`);
-      }
-
-      if (
-        cueText.includes("@fashionstyles_4u")
-      ) {
-        danger(`${filePath} contains "@fashionstyles_4u"`);
-      }
-
-      if (
-        cueText.match(/http/ig)
-      ) {
-        danger(`${filePath} contains "http"`);
-      }
-
-      if (
-        cueText.match(/uploaded by/ig)
-      ) {
-        danger(`${filePath} contains "uploaded by"`);
-      }
-
-      if (
-        cueText.match(/@gmail\.com/ig)
-      ) {
-        danger(`${filePath} contains "@gmail.com"`);
-      }
-
-      if (
-        cueText.match(/@hotmail\.com/ig)
-      ) {
-        danger(`${filePath} contains "@hotmail.com"`);
-      }
-
-      if (
-        cueText.match(/allsubs/ig)
-      ) {
-        danger(`${filePath} contains "AllSubs"`);
-      }
-
-      if (
-        cueText.match(/torrent/ig)
-      ) {
-        warn(`${filePath} contains "torrent"`);
-      }
-
-      if (
-        cueText.includes("@")
-      ) {
-        warn(`${filePath} contains "@"`);
-      }
-
-      if (
-        cueText.match(/copyright/ig)
-      ) {
-        warn(`${filePath} contains "copyright"`);
-      }
-
-      if (
+        cueText.match(/4KVOD\.TV/ig) ||
+        cueText.match(/explosiveskull/ig) ||
+        cueText.match(/ecOtOne/ig) ||
+        cueText.includes("P@rM!NdeR M@nkÖÖ") ||
+        cueText.includes("@fashionstyles_4u") ||
+        cueText.match(/http/ig) ||
+        cueText.match(/uploaded by/ig) ||
+        cueText.match(/@gmail\.com/ig) ||
+        cueText.match(/@hotmail\.com/ig) ||
+        cueText.match(/allsubs/ig) ||
+        cueText.match(/torrent/ig) ||
+        cueText.includes("@") ||
+        cueText.match(/copyright/ig) ||
         cueText.match(/subtitle/ig)
       ) {
-        warn(`${filePath} contains "subtitle"`);
+        danger(`${filePath} contains "${cueText}"`);
+        const shouldDeleteInFuture = confirm("Delete this text from now on?");
+
+        if (shouldDeleteInFuture) {
+          await subTitleDatabase.insertOne({
+            hash,
+            command: "delete",
+          });
+          return;
+        }
+
+        await subTitleDatabase.insertOne({
+          hash,
+          command: "keep",
+        });
       }
 
       newVtt.add(newCue);
