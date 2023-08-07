@@ -116,14 +116,15 @@ async function cleanVTT(filePath = "") {
   const vttContents = await Deno.readTextFile(filePath);
   const newVtt = new WebVtt();
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     let deletedCount = 0;
 
     VttToObject(
       vttContents,
       async function (error, result: { cues: ParsedCues[] }) {
         if (error) {
-          return reject(error);
+          console.error(`Failed to parse ${filePath}`);
+          return resolve(error);
         }
 
         for (const cue of result.cues) {
@@ -138,8 +139,10 @@ async function cleanVTT(filePath = "") {
               payload: cueText,
             });
           } catch (error) {
-            console.error(`Failed to parse ${filePath}`);
-            return reject(error);
+            console.error(
+              `Failed to create cue for ${filePath} @ ${cue.startTime}`,
+            );
+            return resolve(error);
           }
 
           const hash = toHashString(
