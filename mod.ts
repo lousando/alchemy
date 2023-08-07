@@ -128,11 +128,19 @@ async function cleanVTT(filePath = "") {
 
         for (const cue of result.cues) {
           const cueText = cue.text.trim();
-          const newCue = new VttCue({
-            startTime: cue.startTime,
-            endTime: cue.endTime,
-            payload: cueText,
-          });
+
+          let newCue;
+
+          try {
+            newCue = new VttCue({
+              startTime: cue.startTime,
+              endTime: cue.endTime,
+              payload: cueText,
+            });
+          } catch (error) {
+            console.error(`Failed to parse ${filePath}`);
+            return reject(error);
+          }
 
           const hash = toHashString(
             await crypto.subtle.digest(
