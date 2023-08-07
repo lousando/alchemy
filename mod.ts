@@ -50,7 +50,26 @@ for (const file of filesToConvert) {
   } else if (extension === ".mkv" || extension === ".webm") {
     await cleanMKV(filePath);
   } else if (extension === ".srt") {
-    await cleanSRT(filePath);
+    const vttFilename = `${file.dir + SEP + file.name}.vtt`;
+
+    // convert external subs
+    await Deno.run({
+      stdout: "piped",
+      stdin: "null", // ignore this program's input
+      stderr: "null", // ignore this program's input
+      cmd: [
+        "ffmpeg",
+        "-i",
+        filePath,
+        vttFilename,
+      ],
+    }).status();
+
+    await Deno.remove(filePath);
+    console.log("Converted to vtt: ", filePath);
+    await cleanVTT(filePath);
+  } else if (extension === ".vtt") {
+    await cleanVTT(filePath);
   }
 }
 
@@ -58,7 +77,7 @@ for (const file of filesToConvert) {
  * Util
  */
 
-async function cleanSRT(filePath = "") {
+async function cleanVTT(filePath = "") {
   const srtContents = await Deno.readTextFile(filePath);
 
   if (
@@ -116,7 +135,7 @@ async function cleanSRT(filePath = "") {
   }
 
   if (
-      srtContents.match(/allsubs/ig)
+    srtContents.match(/allsubs/ig)
   ) {
     danger(`${filePath} contains "AllSubs"`);
   }
