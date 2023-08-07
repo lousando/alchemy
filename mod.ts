@@ -67,7 +67,7 @@ for (const file of filesToConvert) {
 
     await Deno.remove(filePath);
     console.log("Converted to vtt: ", filePath);
-    await cleanVTT(filePath);
+    await cleanVTT(vttFilename);
   } else if (extension === ".vtt") {
     await cleanVTT(filePath);
   }
