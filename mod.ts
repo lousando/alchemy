@@ -182,7 +182,10 @@ async function cleanVTT(filePath = "") {
             cueText.match(/copyright/ig) ||
             cueText.match(/subtitle/ig)
           ) {
-            console.log(`%c${filePath} contains "${cueText}"`, "color: yellow");
+            console.log(
+              `%c\n${filePath} contains:\n${cue.startTime} --> ${cue.endTime}\n"${cueText}\n`,
+              "color: yellow",
+            );
             const shouldDeleteInFuture = confirm(
               "Delete this text from now on?",
             );
