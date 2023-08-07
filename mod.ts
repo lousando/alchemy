@@ -118,9 +118,18 @@ async function cleanVTT(filePath = "") {
   const newVtt = new AudapolisWebVTT();
 
   return new Promise((resolve, reject) => {
-    vttParser.onflush = resolve;
+    let deletedCount = 0;
 
     vttParser.onparsingerror = (error) => reject(error);
+
+    vttParser.onflush = () => {
+      if (deletedCount > 0) {
+        console.log(`Removing unwanted cues for ${filePath}`);
+        // await Deno.writeTextFile(filePath);
+      }
+
+      resolve();
+    };
 
     vttParser.oncue = async function (cue) {
       const cueText = cue.text.trim();
@@ -140,6 +149,7 @@ async function cleanVTT(filePath = "") {
       const subtitleRecord: Subtitle = await subTitleDatabase.findOne({ hash });
 
       if (subtitleRecord?.command === "delete") {
+        deletedCount++;
         return;
       }
 
@@ -172,6 +182,7 @@ async function cleanVTT(filePath = "") {
             hash,
             command: "delete",
           });
+          deletedCount++;
           return;
         }
 
