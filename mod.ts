@@ -5,17 +5,10 @@ import { ParsedPath } from "std/path/mod.ts";
 import { SEP } from "std/path/separator.ts";
 import { parse as parsePath } from "std/path/posix.ts";
 import { Database } from "aloedb";
-import { VTTCue, WebVTT } from "npm:vtt.js@0.13.0";
-import {
-  VttCue as AudapolisVttCue,
-  WebVtt as AudapolisWebVTT,
-} from "npm:@audapolis/webvtt-writer@1.0.6";
+import VttToObject from "npm:vtt-cue-object";
+import { VttCue, WebVtt } from "npm:@audapolis/webvtt-writer@1.0.6";
 import { crypto } from "std/crypto/mod.ts";
 import { toHashString } from "std/crypto/to_hash_string.ts";
-
-const vttParser = new WebVTT.Parser({
-  VTTCue,
-}, WebVTT.StringDecoder());
 
 const args = parseFlags(Deno.args, {
   stopEarly: true, // populates "_"
@@ -113,91 +106,106 @@ for (const file of filesToConvert) {
  * Util
  */
 
+interface ParsedCues {
+  startTime: number;
+  endTime: number;
+  text: string;
+}
+
 async function cleanVTT(filePath = "") {
   const vttContents = await Deno.readTextFile(filePath);
-  const newVtt = new AudapolisWebVTT();
+  const newVtt = new WebVtt();
 
   return new Promise((resolve, reject) => {
     let deletedCount = 0;
 
-    vttParser.onparsingerror = (error) => reject(error);
-
-    vttParser.onflush = () => {
-      if (deletedCount > 0) {
-        console.log(`Removing unwanted cues for ${filePath}`);
-        // await Deno.writeTextFile(filePath);
-      }
-
-      resolve();
-    };
-
-    vttParser.oncue = async function (cue) {
-      const cueText = cue.text.trim();
-      const newCue = new AudapolisVttCue({
-        startTime: cue.startTime,
-        endTime: cue.endTime,
-        payload: cueText,
-      });
-
-      const hash = toHashString(
-        await crypto.subtle.digest(
-          "SHA-256",
-          new TextEncoder().encode(cueText),
-        ),
-      );
-
-      const subtitleRecord: Subtitle = await subTitleDatabase.findOne({ hash });
-
-      if (subtitleRecord?.command === "delete") {
-        deletedCount++;
-        return;
-      }
-
-      if (subtitleRecord?.command === "keep") {
-        newVtt.add(newCue);
-        return;
-      }
-
-      if (
-        cueText.match(/4KVOD\.TV/ig) ||
-        cueText.match(/explosiveskull/ig) ||
-        cueText.match(/ecOtOne/ig) ||
-        cueText.includes("P@rM!NdeR M@nkÖÖ") ||
-        cueText.includes("@fashionstyles_4u") ||
-        cueText.match(/http/ig) ||
-        cueText.match(/uploaded by/ig) ||
-        cueText.match(/@gmail\.com/ig) ||
-        cueText.match(/@hotmail\.com/ig) ||
-        cueText.match(/allsubs/ig) ||
-        cueText.match(/torrent/ig) ||
-        cueText.includes("@") ||
-        cueText.match(/copyright/ig) ||
-        cueText.match(/subtitle/ig)
-      ) {
-        danger(`${filePath} contains "${cueText}"`);
-        const shouldDeleteInFuture = confirm("Delete this text from now on?");
-
-        if (shouldDeleteInFuture) {
-          await subTitleDatabase.insertOne({
-            hash,
-            command: "delete",
-          });
-          deletedCount++;
-          return;
+    VttToObject(
+      vttContents,
+      async function (error, result: { cues: ParsedCues[] }) {
+        if (error) {
+          return reject(error);
         }
 
-        await subTitleDatabase.insertOne({
-          hash,
-          command: "keep",
-        });
-      }
+        for (const cue of result.cues) {
+          const cueText = cue.text.trim();
+          const newCue = new VttCue({
+            startTime: cue.startTime,
+            endTime: cue.endTime,
+            payload: cueText,
+          });
 
-      newVtt.add(newCue);
-    };
+          const hash = toHashString(
+            await crypto.subtle.digest(
+              "SHA-256",
+              new TextEncoder().encode(cueText),
+            ),
+          );
 
-    vttParser.parse(vttContents);
+          const subtitleRecord: Subtitle = await subTitleDatabase.findOne({
+            hash,
+          });
 
-    vttParser.flush();
+          if (subtitleRecord?.command === "delete") {
+            deletedCount++;
+            continue;
+          }
+
+          if (subtitleRecord?.command === "keep") {
+            newVtt.add(newCue);
+            continue;
+          }
+
+          if (
+            cueText.match(/4KVOD\.TV/ig) ||
+            cueText.match(/explosiveskull/ig) ||
+            cueText.match(/ecOtOne/ig) ||
+            cueText.includes("P@rM!NdeR M@nkÖÖ") ||
+            cueText.includes("@fashionstyles_4u") ||
+            cueText.match(/http/ig) ||
+            cueText.match(/uploaded by/ig) ||
+            cueText.match(/@gmail\.com/ig) ||
+            cueText.match(/@hotmail\.com/ig) ||
+            cueText.match(/allsubs/ig) ||
+            cueText.match(/torrent/ig) ||
+            cueText.includes("@") ||
+            cueText.match(/copyright/ig) ||
+            cueText.match(/subtitle/ig)
+          ) {
+            console.log(`%c${filePath} contains "${cueText}"`, "color: yellow");
+            const shouldDeleteInFuture = confirm(
+              "Delete this text from now on?",
+            );
+
+            if (shouldDeleteInFuture) {
+              await subTitleDatabase.insertOne({
+                hash,
+                command: "delete",
+              });
+              deletedCount++;
+              continue;
+            }
+
+            await subTitleDatabase.insertOne({
+              hash,
+              command: "keep",
+            });
+          }
+
+          newVtt.add(newCue);
+        }
+
+        if (deletedCount > 0) {
+          console.log(
+            `%cRemoving unwanted cues for ${filePath}`,
+            "color: cyan",
+          );
+          // overwrite file
+          await Deno.writeTextFile(filePath, newVtt.toString());
+        }
+
+        resolve();
+      },
+    );
   });
 }
 
@@ -234,12 +242,4 @@ async function cleanMKV(filePath = "") {
     await Deno.rename(`${filePath}.backup`, filePath);
     console.error("Failed to clean: ", filePath);
   }
-}
-
-function warn(message = "") {
-  console.log(`%c${message}`, "color: yellow");
-}
-
-function danger(message = "") {
-  console.log(`%c${message}`, "color: red");
 }
