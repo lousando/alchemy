@@ -182,7 +182,8 @@ async function cleanVTT(filePath = "") {
             cueText.match(/copyright/ig) ||
             cueText.match(/subtitle/ig) ||
             cueText.match(/Subscene/ig) ||
-            cueText.match(/DonToribio/ig)
+            cueText.match(/DonToribio/ig) ||
+            cueText.match(/synced/ig)
           ) {
             console.log(
               `%c\n${filePath} contains:\n${cue.startTime} --> ${cue.endTime}\n"${cueText}\n`,
