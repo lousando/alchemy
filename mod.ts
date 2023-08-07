@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write
+#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env
 
 import { parse as parseFlags } from "std/flags/mod.ts";
 import { ParsedPath } from "std/path/mod.ts";
@@ -20,7 +20,7 @@ interface Subtitle {
 }
 
 // init
-const database = new Database<Subtitle>("~/.clean_cow.json");
+const database = new Database<Subtitle>(`${Deno.env.get("HOME")}/.clean_cow.json`);
 
 for (const file of filesToConvert) {
   const filePath = `${file.dir}${SEP}${file.base}`;
