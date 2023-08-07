@@ -6,6 +6,12 @@ import { SEP } from "std/path/separator.ts";
 import { parse as parsePath } from "std/path/posix.ts";
 import { Database } from "aloedb";
 import { VTTCue, WebVTT } from "npm:vtt.js@0.13.0";
+import {
+  VttCue as AudapolisVttCue,
+  WebVtt as AudapolisWebVTT,
+} from "npm:@audapolis/webvtt-writer@1.0.6";
+import { crypto } from "std/crypto/mod.ts";
+import { toHashString } from "std/crypto/to_hash_string.ts";
 
 const vttParser = new WebVTT.Parser({
   VTTCue,
@@ -108,14 +114,27 @@ for (const file of filesToConvert) {
 
 async function cleanVTT(filePath = "") {
   const vttContents = await Deno.readTextFile(filePath);
+  const newVtt = new AudapolisWebVTT();
 
   return new Promise((resolve, reject) => {
     vttParser.onflush = resolve;
 
     vttParser.onparsingerror = (error) => reject(error);
 
-    vttParser.oncue = function (cue) {
-      const cueText = cue.text;
+    vttParser.oncue = async function (cue) {
+      const cueText = cue.text.trim();
+      const newCue = new AudapolisVttCue({
+        startTime: cue.startTime,
+        endTime: cue.endTime,
+        payload: cueText,
+      });
+
+      const checksum = toHashString(
+        await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(cueText),
+        ),
+      );
 
       if (
         cueText.match(/4KVOD\.TV/ig)
@@ -200,6 +219,8 @@ async function cleanVTT(filePath = "") {
       ) {
         warn(`${filePath} contains "subtitle"`);
       }
+
+      newVtt.add(newCue);
     };
 
     vttParser.parse(vttContents);
