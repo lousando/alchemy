@@ -180,7 +180,9 @@ async function cleanVTT(filePath = "") {
             cueText.match(/torrent/ig) ||
             cueText.includes("@") ||
             cueText.match(/copyright/ig) ||
-            cueText.match(/subtitle/ig)
+            cueText.match(/subtitle/ig) ||
+            cueText.match(/Subscene/ig) ||
+            cueText.match(/DonToribio/ig)
           ) {
             console.log(
               `%c\n${filePath} contains:\n${cue.startTime} --> ${cue.endTime}\n"${cueText}\n`,
