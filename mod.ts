@@ -4,6 +4,7 @@ import { parse as parseFlags } from "std/flags/mod.ts";
 import { ParsedPath } from "std/path/mod.ts";
 import { SEP } from "std/path/separator.ts";
 import { parse as parsePath } from "std/path/posix.ts";
+import { Database } from "aloedb";
 
 const args = parseFlags(Deno.args, {
   stopEarly: true, // populates "_"
@@ -13,9 +14,30 @@ const filesToConvert: Array<ParsedPath> = args._.map((f) =>
   parsePath(String(f))
 );
 
+// Structure of stored documents
+interface Subtitle {
+  hash: string;
+}
+
+// init
+const database = new Database<Subtitle>("~/.clean_cow.json");
+
 for (const file of filesToConvert) {
   const filePath = `${file.dir}${SEP}${file.base}`;
-  const fileInfo = await Deno.stat(filePath);
+
+  let fileInfo;
+
+  try {
+    fileInfo = await Deno.stat(filePath);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      console.log(`Not found: ${filePath}`);
+      continue;
+    }
+
+    console.error("ERROR: ", error);
+    Deno.exit(1);
+  }
 
   if (fileInfo.isDirectory) {
     // skip this
