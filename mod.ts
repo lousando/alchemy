@@ -211,7 +211,9 @@ async function cleanVTT(filePath = "") {
             "color: cyan",
           );
           // overwrite file
-          await Deno.writeTextFile(filePath, newVtt.toString());
+          await Deno.writeTextFile(filePath, newVtt.toString(), {
+            mode: 0o664,
+          });
         }
 
         resolve();
