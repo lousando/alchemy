@@ -54,7 +54,7 @@ for (const file of filesToConvert) {
   const extension = file.ext.toLowerCase();
 
   // convert to MkV
-  if (extension === ".mp4") {
+  if (extension === ".mp4" || extension === ".avi") {
     // convert external subs
     await Deno.run({
       stdout: "piped",
