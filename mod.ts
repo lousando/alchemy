@@ -64,6 +64,13 @@ for (const file of filesToConvert) {
         "ffmpeg",
         "-i",
         filePath,
+
+        /**
+         * Copy all streams
+         */
+        "-map",
+        "0",
+
         "-c:v",
         "copy",
         "-c:a",
@@ -241,6 +248,13 @@ async function cleanMKV(filePath = "") {
       "ffmpeg",
       "-i",
       `${filePath}.backup`,
+
+      /**
+       * Copy all streams
+       */
+      "-map",
+      "0",
+
       "-c",
       "copy",
       "-sn", // no subs
