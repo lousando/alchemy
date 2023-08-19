@@ -235,11 +235,8 @@ async function cleanVTT(filePath = "") {
 }
 
 async function cleanMKV(filePath = "") {
-  // make backup
-  await Deno.rename(filePath, `${filePath}.backup`);
-
   // remove unwanted video meta
-  await Deno.run({
+  const cleanMkvTask = await Deno.run({
     stdout: "piped",
     stdin: "null", // ignore this program's input
     stderr: "null", // ignore this program's input
@@ -259,14 +256,12 @@ async function cleanMKV(filePath = "") {
       "name",
       filePath,
     ],
-  }).status();
+  });
 
-  if (await removeSubsTask.status()) {
-    await Deno.remove(`${filePath}.backup`);
+  if (await cleanMkvTask.status()) {
     console.log("Cleaned: ", filePath);
   } else {
     // task failed, restore backup
-    await Deno.rename(`${filePath}.backup`, filePath);
     console.error("Failed to clean: ", filePath);
   }
 }
