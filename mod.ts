@@ -238,28 +238,32 @@ async function cleanMKV(filePath = "") {
   // make backup
   await Deno.rename(filePath, `${filePath}.backup`);
 
-  // remove unwanted video meta
-  await Deno.run({
+  // remove video subs and title metadata
+  const removeSubsTask = Deno.run({
     stdout: "piped",
     stdin: "null", // ignore this program's input
     stderr: "null", // ignore this program's input
     cmd: [
-      "mkvpropedit",
-      "-d",
-      // no video title
-      "title",
-      // no audio track title names
-      "--edit",
-      "track:a1",
-      "-d",
-      "name",
-      "--edit",
-      "track:a2",
-      "-d",
-      "name",
+      "ffmpeg",
+      "-i",
+      `${filePath}.backup`,
+
+      /**
+       * Copy all streams
+       */
+      "-map",
+      "0",
+
+      "-c",
+      "copy",
+      /**
+       * no title
+       */
+      "-metadata",
+      "title=",
       filePath,
     ],
-  }).status();
+  });
 
   if (await removeSubsTask.status()) {
     await Deno.remove(`${filePath}.backup`);
