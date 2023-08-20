@@ -75,6 +75,7 @@ for (const file of filesToConvert) {
         "copy",
         "-c:a",
         "copy",
+        "-sn", // no subs
         `${file.dir + SEP + file.name}.mkv`,
       ],
     }).status();
@@ -256,6 +257,7 @@ async function cleanMKV(filePath = "") {
 
       "-c",
       "copy",
+      "-sn", // no subs
       /**
        * no title
        */
