@@ -58,12 +58,8 @@ for (const file of filesToConvert) {
     console.log("Converting: ", filePath);
 
     // convert external subs
-    await Deno.run({
-      stdout: "piped",
-      stdin: "null", // ignore this program's input
-      stderr: "null", // ignore this program's input
-      cmd: [
-        "ffmpeg",
+    await new Deno.Command("ffmpeg", {
+      args: [
         "-i",
         filePath,
 
@@ -80,7 +76,7 @@ for (const file of filesToConvert) {
         "-sn", // no subs
         `${file.dir + SEP + file.name}.mkv`,
       ],
-    }).status();
+    }).output();
 
     console.log("Converted to mkv: ", filePath);
     await cleanMKV(`${file.dir + SEP + file.name}.mkv`);
@@ -91,17 +87,13 @@ for (const file of filesToConvert) {
     const vttFilename = `${file.dir + SEP + file.name}.vtt`;
 
     // convert external subs
-    await Deno.run({
-      stdout: "piped",
-      stdin: "null", // ignore this program's input
-      stderr: "null", // ignore this program's input
-      cmd: [
-        "ffmpeg",
+    await new Deno.Command("ffmpeg", {
+      args: [
         "-i",
         filePath,
         vttFilename,
       ],
-    }).status();
+    }).output();
 
     await Deno.remove(filePath);
     console.log("Converted to vtt: ", filePath);
@@ -293,12 +285,8 @@ async function cleanMKV(filePath = "") {
   await Deno.rename(filePath, `${filePath}.backup`);
 
   // remove video subs and title metadata
-  const removeSubsTask = Deno.run({
-    stdout: "piped",
-    stdin: "null", // ignore this program's input
-    stderr: "null", // ignore this program's input
-    cmd: [
-      "ffmpeg",
+  const removeSubsTask = await new Deno.Command("ffmpeg", {
+    args: [
       "-i",
       `${filePath}.backup`,
 
@@ -318,9 +306,9 @@ async function cleanMKV(filePath = "") {
       "title=",
       filePath,
     ],
-  });
+  }).output();
 
-  if (await removeSubsTask.status()) {
+  if (removeSubsTask.code === 0) {
     await Deno.remove(`${filePath}.backup`);
     console.log(`%cCleaned: ${filePath}`, "color: green");
   } else {
