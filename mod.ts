@@ -238,12 +238,59 @@ async function cleanVTT(filePath = "") {
 }
 
 async function cleanMKV(filePath = "") {
-  console.log("Creating backup of: ", filePath);
+  const mediaInfoCommand = await new Deno.Command("mediainfo", {
+    args: [
+      "--Output=JSON",
+      filePath,
+    ],
+  }).output();
+
+  const mediaInfo = JSON.parse(
+    new TextDecoder().decode(mediaInfoCommand.stdout),
+  );
+
+  const hasSubs = mediaInfo.media?.track?.find((t) => t["@type"] === "Text");
+
+  if (mediaInfoCommand.code !== 0) {
+    console.error("%cFailed to get video metadata.", "color: red");
+    Deno.exit(mediaInfoCommand.code);
+  }
+
+  // remove unwanted video meta
+  const mkvpropeditCommand = await new Deno.Command("mkvpropedit", {
+    args: [
+      // no video title
+      "-d",
+      "title",
+      // no audio track title names
+      "--edit",
+      "track:a1",
+      "-d",
+      "name",
+      "--edit",
+      "track:a2",
+      "-d",
+      "name",
+      filePath,
+    ],
+  }).output();
+
+  if (mkvpropeditCommand.code !== 0) {
+    console.error("%cFailed to Remove video metadata.", "color: red");
+    console.error(new TextDecoder().decode(mediaInfoCommand.stdout));
+    Deno.exit(mediaInfoCommand.code);
+  }
+
+  if (!hasSubs) {
+    console.log("No subs found");
+    console.log(`%cCleaned: ${filePath}`, "color: green");
+    return;
+  }
+
+  console.log("Subs found, removing...");
 
   // make backup
   await Deno.rename(filePath, `${filePath}.backup`);
-
-  console.log("Cleaning: ", filePath);
 
   // remove video subs and title metadata
   const removeSubsTask = Deno.run({
