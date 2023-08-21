@@ -259,18 +259,22 @@ async function cleanMKV(filePath = "") {
       "track:a1",
       "-d",
       "name",
-      "--edit",
-      "track:a2",
-      "-d",
-      "name",
+      // todo: more intelligently remove all audio track names
+      // "--edit",
+      // "track:a2",
+      // "-d",
+      // "name",
       filePath,
     ],
   }).output();
 
   if (mkvpropeditCommand.code !== 0) {
-    console.error("%cFailed to Remove video metadata.", "color: red");
-    console.error(new TextDecoder().decode(mediaInfoCommand.stdout));
-    Deno.exit(mediaInfoCommand.code);
+    console.error(
+      `%cFailed to Remove video metadata [${mkvpropeditCommand.code}]: ${filePath}`,
+      "color: red",
+    );
+    console.error(new TextDecoder().decode(mediaInfoCommand.stderr));
+    return;
   }
 
   if (!hasSubs) {
