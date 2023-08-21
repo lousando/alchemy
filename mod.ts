@@ -55,6 +55,8 @@ for (const file of filesToConvert) {
 
   // convert to MkV
   if (extension === ".mp4" || extension === ".avi") {
+    console.log("Converting: ", filePath);
+
     // convert external subs
     await Deno.run({
       stdout: "piped",
@@ -236,8 +238,12 @@ async function cleanVTT(filePath = "") {
 }
 
 async function cleanMKV(filePath = "") {
+  console.log("Creating backup of: : ", filePath);
+
   // make backup
   await Deno.rename(filePath, `${filePath}.backup`);
+
+  console.log("Cleaning: ", filePath);
 
   // remove video subs and title metadata
   const removeSubsTask = Deno.run({
@@ -269,7 +275,7 @@ async function cleanMKV(filePath = "") {
 
   if (await removeSubsTask.status()) {
     await Deno.remove(`${filePath}.backup`);
-    console.log("Cleaned: ", filePath);
+    console.log(`%cCleaned: ${filePath}`, "color: green");
   } else {
     // task failed, restore backup
     await Deno.rename(`${filePath}.backup`, filePath);
