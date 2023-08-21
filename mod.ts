@@ -238,7 +238,7 @@ async function cleanVTT(filePath = "") {
 }
 
 async function cleanMKV(filePath = "") {
-  console.log("Creating backup of: : ", filePath);
+  console.log("Creating backup of: ", filePath);
 
   // make backup
   await Deno.rename(filePath, `${filePath}.backup`);
