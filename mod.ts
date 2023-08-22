@@ -1,14 +1,15 @@
-#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env
+#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env --allow-net
 
 import { parse as parseFlags } from "std/flags/mod.ts";
 import { ParsedPath } from "std/path/mod.ts";
 import { SEP } from "std/path/separator.ts";
 import { parse as parsePath } from "std/path/posix.ts";
-import { Database } from "aloedb";
 import VttToObject from "npm:vtt-cue-object";
 import { VttCue, WebVtt } from "npm:@audapolis/webvtt-writer@1.0.6";
 import { crypto } from "std/crypto/mod.ts";
 import { toHashString } from "std/crypto/to_hash_string.ts";
+import nano from "npm:nano@10.1.2";
+import * as yaml from "std/yaml/mod.ts";
 
 const args = parseFlags(Deno.args, {
   stopEarly: true, // populates "_"
@@ -24,10 +25,32 @@ interface Subtitle {
   command: string;
 }
 
-// init
-const subTitleDatabase = new Database<Subtitle>(
-  `${Deno.env.get("HOME")}/.clean_cow.json`,
-);
+const configFilePath = `${Deno.env.get("HOME")}/.clean_cow.yaml`;
+
+let config;
+
+try {
+  config = yaml.parse(
+    await Deno.readTextFile(configFilePath),
+  );
+} catch (error) {
+  if (error.code === "ENOENT") {
+    await Deno.writeTextFile(
+      configFilePath,
+      yaml.stringify({
+        couchdb_url: "http://admin:password@localhost:5984",
+      }),
+    );
+    console.log(`Created config file at: ${configFilePath}`);
+    Deno.exit(0);
+  } else {
+    console.error(error);
+    Deno.exit(1);
+  }
+}
+
+const remoteDB = nano(config.couchdb_url);
+const subTitleDatabase = remoteDB.use("clean_cow_subtitles");
 
 for (const file of filesToConvert) {
   const filePath = `${file.dir}${SEP}${file.base}`;
@@ -114,6 +137,8 @@ interface ParsedCues {
 }
 
 async function cleanVTT(filePath = "") {
+  console.log(`Processing: ${filePath}`);
+
   const vttContents = await Deno.readTextFile(filePath);
   const newVtt = new WebVtt();
 
@@ -153,18 +178,20 @@ async function cleanVTT(filePath = "") {
             ),
           );
 
-          const subtitleRecord: Subtitle = await subTitleDatabase.findOne({
-            hash,
-          });
+          try {
+            const subtitleRecord: Subtitle = await subTitleDatabase.get(hash);
 
-          if (subtitleRecord?.command === "delete") {
-            deletedCount++;
-            continue;
-          }
+            if (subtitleRecord?.command === "delete") {
+              deletedCount++;
+              continue;
+            }
 
-          if (subtitleRecord?.command === "keep") {
-            newVtt.add(newCue);
-            continue;
+            if (subtitleRecord?.command === "keep") {
+              newVtt.add(newCue);
+              continue;
+            }
+          } catch (_error) {
+            // intentionally left blank
           }
 
           if (
@@ -184,7 +211,9 @@ async function cleanVTT(filePath = "") {
             cueText.match(/subtitle/ig) ||
             cueText.match(/Subscene/ig) ||
             cueText.match(/DonToribio/ig) ||
-            cueText.match(/synced/ig)
+            cueText.match(/synced/ig) ||
+            cueText.match(/YTS\.MX/ig) ||
+            cueText.match(/YIFY/ig)
           ) {
             console.log(
               `%c\n${filePath} contains:\n${cue.startTime} --> ${cue.endTime}\n"${cueText}\n`,
@@ -195,7 +224,8 @@ async function cleanVTT(filePath = "") {
             );
 
             if (shouldDeleteInFuture) {
-              await subTitleDatabase.insertOne({
+              await subTitleDatabase.insert({
+                _id: hash,
                 hash,
                 command: "delete",
               });
@@ -203,7 +233,8 @@ async function cleanVTT(filePath = "") {
               continue;
             }
 
-            await subTitleDatabase.insertOne({
+            await subTitleDatabase.insert({
+              _id: hash,
               hash,
               command: "keep",
             });
@@ -222,6 +253,8 @@ async function cleanVTT(filePath = "") {
             mode: 0o664,
           });
         }
+
+        console.log(`%cCleaned: ${filePath}`, "color: green");
 
         resolve();
       },
