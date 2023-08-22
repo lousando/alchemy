@@ -58,6 +58,7 @@ const subTitleDatabase = remoteDB.use("clean_cow_subtitles");
 const stopWordsDatabase = remoteDB.use("clean_cow_stop_words");
 
 // cache for current run
+let subTitleCache = await getAllSubTitleDocs();
 const stopWords = (await stopWordsDatabase.list()).rows.map((r) => r.id);
 
 for (const file of filesToConvert) {
@@ -144,6 +145,11 @@ interface ParsedCues {
   text: string;
 }
 
+async function getAllSubTitleDocs() {
+  const dbResponse = await subTitleDatabase.list({ include_docs: true });
+  return dbResponse.rows.map((r) => r.doc);
+}
+
 async function cleanVTT(filePath = "") {
   console.log(`Processing: ${filePath}`);
 
@@ -187,7 +193,9 @@ async function cleanVTT(filePath = "") {
           );
 
           try {
-            const subtitleRecord: Subtitle = await subTitleDatabase.get(hash);
+            const subtitleRecord: Subtitle = subTitleCache.find((doc) =>
+              doc._id === hash
+            );
 
             if (subtitleRecord?.command === "delete") {
               deletedCount++;
@@ -222,6 +230,8 @@ async function cleanVTT(filePath = "") {
                 hash,
                 command: "delete",
               });
+              // reset cache
+              subTitleCache = await getAllSubTitleDocs();
               deletedCount++;
               continue;
             }
@@ -231,6 +241,8 @@ async function cleanVTT(filePath = "") {
               hash,
               command: "keep",
             });
+            // reset cache
+            subTitleCache = await getAllSubTitleDocs();
           }
 
           newVtt.add(newCue);
