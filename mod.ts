@@ -50,7 +50,15 @@ try {
 }
 
 const remoteDB = nano(config.couchdb_url);
+
+/**
+ * databases
+ */
 const subTitleDatabase = remoteDB.use("clean_cow_subtitles");
+const stopWordsDatabase = remoteDB.use("clean_cow_stop_words");
+
+// cache for current run
+const stopWords = (await stopWordsDatabase.list()).rows.map((r) => r.id);
 
 for (const file of filesToConvert) {
   const filePath = `${file.dir}${SEP}${file.base}`;
@@ -194,27 +202,12 @@ async function cleanVTT(filePath = "") {
             // intentionally left blank
           }
 
-          if (
-            cueText.match(/4KVOD\.TV/ig) ||
-            cueText.match(/explosiveskull/ig) ||
-            cueText.match(/ecOtOne/ig) ||
-            cueText.includes("P@rM!NdeR M@nkÖÖ") ||
-            cueText.includes("@fashionstyles_4u") ||
-            cueText.match(/http/ig) ||
-            cueText.match(/uploaded by/ig) ||
-            cueText.match(/@gmail\.com/ig) ||
-            cueText.match(/@hotmail\.com/ig) ||
-            cueText.match(/allsubs/ig) ||
-            cueText.match(/torrent/ig) ||
-            cueText.includes("@") ||
-            cueText.match(/copyright/ig) ||
-            cueText.match(/subtitle/ig) ||
-            cueText.match(/Subscene/ig) ||
-            cueText.match(/DonToribio/ig) ||
-            cueText.match(/synced/ig) ||
-            cueText.match(/YTS\.MX/ig) ||
-            cueText.match(/YIFY/ig)
-          ) {
+          const foundStopWord = stopWords.reduce((acc, word) => {
+            const stopWordRegex = new RegExp(word, "ig");
+            return acc || stopWordRegex.test(cueText);
+          }, false);
+
+          if (foundStopWord) {
             console.log(
               `%c\n${filePath} contains:\n${cue.startTime} --> ${cue.endTime}\n"${cueText}\n`,
               "color: yellow",
