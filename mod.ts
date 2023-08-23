@@ -268,6 +268,8 @@ async function cleanVTT(filePath = "") {
 }
 
 async function cleanMKV(filePath = "") {
+  console.log(`Cleaning ${filePath}`);
+
   const mediaInfoCommand = await new Deno.Command("mediainfo", {
     args: [
       "--Output=JSON",
@@ -321,7 +323,7 @@ async function cleanMKV(filePath = "") {
     return;
   }
 
-  console.log("Subs found, removing...");
+  console.log("%cSubs found, removing...", "color: yellow");
 
   // make backup
   await Deno.rename(filePath, `${filePath}.backup`);
