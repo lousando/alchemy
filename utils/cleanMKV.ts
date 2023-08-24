@@ -1,6 +1,54 @@
 export default async function cleanMKV(filePath = "") {
   console.log(`Cleaning ${filePath}`);
 
+  const mediaInfoCommand = await new Deno.Command("mediainfo", {
+    args: [
+      "--Output=JSON",
+      filePath,
+    ],
+  }).output();
+
+  let mediaInfo;
+  let mediaInfoRaw;
+
+  try {
+    mediaInfoRaw = new TextDecoder().decode(mediaInfoCommand.stdout);
+    mediaInfo = JSON.parse(mediaInfoRaw);
+  } catch (_error) {
+    console.error(
+      `%cFailed to parse video metadata for ${filePath}.`,
+      "color: red",
+    );
+    console.error(mediaInfoRaw);
+    console.error(
+      `%cWill attempt to patch video metadata for ${filePath}.`,
+      "color: yellow",
+    );
+    await cleanMetadata(filePath);
+    await removeSubs(filePath);
+    return;
+  }
+
+  const hasSubs = mediaInfo.media?.track?.find((t) => t["@type"] === "Text");
+
+  if (mediaInfoCommand.code !== 0) {
+    console.error("%cFailed to get video metadata.", "color: red");
+    return;
+  }
+
+  if (!hasSubs) {
+    console.log("No subs found");
+    console.log(`%cCleaned: ${filePath}`, "color: green");
+    return;
+  }
+
+  await cleanMetadata(filePath);
+
+  console.log("%cSubs found, removing...", "color: yellow");
+  await removeSubs(filePath);
+}
+
+async function cleanMetadata(filePath = "") {
   // remove unwanted video meta
   const mkvpropeditCommand = await new Deno.Command("mkvpropedit", {
     args: [
@@ -29,49 +77,6 @@ export default async function cleanMKV(filePath = "") {
     console.error(new TextDecoder().decode(mkvpropeditCommand.stderr));
     return;
   }
-
-  const mediaInfoCommand = await new Deno.Command("mediainfo", {
-    args: [
-      "--Output=JSON",
-      filePath,
-    ],
-  }).output();
-
-  let mediaInfo;
-  let mediaInfoRaw;
-
-  try {
-    mediaInfoRaw = new TextDecoder().decode(mediaInfoCommand.stdout);
-    mediaInfo = JSON.parse(mediaInfoRaw);
-  } catch (_error) {
-    console.error(
-      `%cFailed to parse video metadata for ${filePath}.`,
-      "color: red",
-    );
-    console.error(mediaInfoRaw);
-    console.error(
-      `%cWill attempt to patch video metadata for ${filePath}.`,
-      "color: yellow",
-    );
-    await removeSubs(filePath);
-    return;
-  }
-
-  const hasSubs = mediaInfo.media?.track?.find((t) => t["@type"] === "Text");
-
-  if (mediaInfoCommand.code !== 0) {
-    console.error("%cFailed to get video metadata.", "color: red");
-    return;
-  }
-
-  if (!hasSubs) {
-    console.log("No subs found");
-    console.log(`%cCleaned: ${filePath}`, "color: green");
-    return;
-  }
-
-  console.log("%cSubs found, removing...", "color: yellow");
-  await removeSubs(filePath);
 }
 
 async function removeSubs(filePath = "") {
