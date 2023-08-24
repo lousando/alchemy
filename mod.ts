@@ -277,15 +277,26 @@ async function cleanMKV(filePath = "") {
     ],
   }).output();
 
-  const mediaInfo = JSON.parse(
-    new TextDecoder().decode(mediaInfoCommand.stdout),
-  );
+  let mediaInfo;
+  let mediaInfoRaw;
+
+  try {
+    mediaInfoRaw = new TextDecoder().decode(mediaInfoCommand.stdout);
+    mediaInfo = JSON.parse(mediaInfoRaw);
+  } catch (e) {
+    console.error(
+      `%cFailed to parse video metadata for ${filePath}.`,
+      "color: red",
+    );
+    console.error(mediaInfoRaw);
+    return;
+  }
 
   const hasSubs = mediaInfo.media?.track?.find((t) => t["@type"] === "Text");
 
   if (mediaInfoCommand.code !== 0) {
     console.error("%cFailed to get video metadata.", "color: red");
-    Deno.exit(mediaInfoCommand.code);
+    return;
   }
 
   // remove unwanted video meta
