@@ -16,6 +16,9 @@ try {
       yaml.stringify({
         couchdb_url: "http://admin:password@localhost:5984",
       }),
+      {
+        mode: 0o600,
+      },
     );
     console.log(`Created config file at: ${configFilePath}`);
     Deno.exit(0);
