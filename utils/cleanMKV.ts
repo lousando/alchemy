@@ -24,8 +24,8 @@ export default async function cleanMKV(filePath = "") {
       `%cWill attempt to patch video metadata for ${filePath}.`,
       "color: yellow",
     );
-    await cleanMetadata(filePath);
     await removeSubs(filePath);
+    await cleanMetadata(filePath);
     return;
   }
 
