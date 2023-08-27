@@ -19,13 +19,13 @@ export default async function cleanMKV(filePath = "") {
       `%cFailed to parse video metadata for ${filePath}.`,
       "color: red",
     );
-    console.error(mediaInfoRaw);
-    console.error(
-      `%cWill attempt to patch video metadata for ${filePath}.`,
-      "color: yellow",
-    );
-    await removeSubs(filePath);
-    await cleanMetadata(filePath);
+    console.error(new TextDecoder().decode(mediaInfoCommand.stderr));
+    // console.error(
+    //   `%cWill attempt to patch video metadata for ${filePath}.`,
+    //   "color: yellow",
+    // );
+    // await removeSubs(filePath);
+    // await cleanMetadata(filePath);
     return;
   }
 
