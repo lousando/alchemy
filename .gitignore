@@ -3,3 +3,6 @@
 
 # binaries
 bin/
+
+# Node
+node_modules
