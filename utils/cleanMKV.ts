@@ -1,25 +1,18 @@
 export default async function cleanMKV(filePath = "") {
   console.log(`Cleaning ${filePath}`);
 
-  const mediaInfoCommand = await new Deno.Command("mediainfo", {
-    args: [
-      "--Output=JSON",
-      filePath,
-    ],
-  }).output();
+  const mediaInfoCommand = await $`mediainfo --Output=JSON ${filePath}`;
 
   let mediaInfo;
-  let mediaInfoRaw;
 
   try {
-    mediaInfoRaw = new TextDecoder().decode(mediaInfoCommand.stdout);
-    mediaInfo = JSON.parse(mediaInfoRaw);
+    mediaInfo = JSON.parse(mediaInfoCommand.stdout);
   } catch (_error) {
     console.error(
       `%cFailed to parse video metadata for ${filePath}.`,
       "color: red",
     );
-    console.error(new TextDecoder().decode(mediaInfoCommand.stderr));
+    console.error(mediaInfoCommand.stderr);
     // console.error(
     //   `%cWill attempt to patch video metadata for ${filePath}.`,
     //   "color: yellow",
@@ -31,7 +24,7 @@ export default async function cleanMKV(filePath = "") {
 
   const hasSubs = mediaInfo.media?.track?.find((t) => t["@type"] === "Text");
 
-  if (mediaInfoCommand.code !== 0) {
+  if (mediaInfoCommand.exitCode !== 0) {
     console.error("%cFailed to get video metadata.", "color: red");
     return;
   }
@@ -49,32 +42,32 @@ export default async function cleanMKV(filePath = "") {
 }
 
 async function cleanMetadata(filePath = "") {
-  // remove unwanted video meta
-  const mkvpropeditCommand = await new Deno.Command("mkvpropedit", {
-    args: [
-      // no video title
-      "-d",
-      "title",
-      // no audio track title names
-      "--edit",
-      "track:a1",
-      "-d",
-      "name",
-      // todo: more intelligently remove all audio track names
-      // "--edit",
-      // "track:a2",
-      // "-d",
-      // "name",
-      filePath,
-    ],
-  }).output();
+  const flags = [
+    // no video title
+    "-d",
+    "title",
 
-  if (mkvpropeditCommand.code !== 0) {
+    // no audio track title names
+    "--edit",
+    "track:a1",
+    "-d",
+    "name",
+    // todo: more intelligently remove all audio track names
+    // "--edit",
+    // "track:a2",
+    // "-d",
+    // "name",
+  ];
+
+  // remove unwanted video meta
+  const mkvpropeditCommand = await $`mkvpropedit ${flags} ${filePath}`;
+
+  if (mkvpropeditCommand.exitCode !== 0) {
     console.error(
-      `%cFailed to Remove video metadata [${mkvpropeditCommand.code}]: ${filePath}`,
+      `%cFailed to Remove video metadata [${mkvpropeditCommand.exitCode}]: ${filePath}`,
       "color: red",
     );
-    console.error(new TextDecoder().decode(mkvpropeditCommand.stderr));
+    console.error(mkvpropeditCommand.stderr);
     return;
   }
 }
@@ -83,31 +76,30 @@ async function removeSubs(filePath = "") {
   // make backup
   await Deno.rename(filePath, `${filePath}.backup`);
 
+  const flags = [
+    /**
+     * Copy all streams
+     */
+    "-map",
+    "0",
+
+    "-c",
+    "copy",
+
+    "-sn", // no subs
+
+    /**
+     * no title
+     */
+    "-metadata",
+    "title=",
+  ];
+
   // remove video subs and title metadata
-  const removeSubsTask = await new Deno.Command("ffmpeg", {
-    args: [
-      "-i",
-      `${filePath}.backup`,
+  const removeSubsTask =
+    await $`ffmpeg -i ${filePath}.backup ${flags} ${filePath}`;
 
-      /**
-       * Copy all streams
-       */
-      "-map",
-      "0",
-
-      "-c",
-      "copy",
-      "-sn", // no subs
-      /**
-       * no title
-       */
-      "-metadata",
-      "title=",
-      filePath,
-    ],
-  }).output();
-
-  if (removeSubsTask.code === 0) {
+  if (removeSubsTask.exitCode === 0) {
     await Deno.remove(`${filePath}.backup`);
     console.log(`%cCleaned: ${filePath}`, "color: green");
   } else {

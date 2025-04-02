@@ -11,8 +11,11 @@ File cleaner for video and subtitle files.
 
 ## Install
 
-Prerequisites: 
-    - Install [Deno](https://deno.com/)
+- Prerequisites:
+  - [Deno](https://deno.com/)
+  - ffmpeg
+  - mediainfo
+  - mkvpropedit
 
 ```bash
 # global install (recommended)

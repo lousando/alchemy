@@ -22,7 +22,6 @@ for (const file of filesToConvert) {
   // file is in the current directory
   if (fileDirectory === "") {
     fileDirectory = ".";
-
   }
 
   const filePath = `${fileDirectory}${SEP}${file.base}`;
@@ -68,7 +67,9 @@ for (const file of filesToConvert) {
     const newFileName = `${fileDirectory + SEP + file.name}.mkv`;
 
     // -sn = no subs
-    await spinner(() => $`ffmpeg -hide_banner -loglevel error -i ${filePath} ${flagsCopyAllStreams} -sn ${newFileName}`);
+    await spinner(() =>
+      $`ffmpeg -hide_banner -loglevel error -i ${filePath} ${flagsCopyAllStreams} -sn ${newFileName}`
+    );
 
     console.log("Converted to mkv: ", filePath);
     await cleanMKV(newFileName);
@@ -81,7 +82,9 @@ for (const file of filesToConvert) {
     const vttFilename = `${fileDirectory + SEP + file.name}.vtt`;
 
     // convert external subs
-    await spinner(() => $`ffmpeg -hide_banner -loglevel error -i ${filePath} ${vttFilename}`);
+    await spinner(() =>
+      $`ffmpeg -hide_banner -loglevel error -i ${filePath} ${vttFilename}`
+    );
 
     // todo: make removal explicit
     await Deno.remove(filePath);
