@@ -1,5 +1,6 @@
-#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env --allow-net
+#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env --allow-net --allow-sys
 
+import "zx/globals";
 import { parse as parseFlags } from "std/flags/mod.ts";
 import { ParsedPath } from "std/path/mod.ts";
 import { SEP } from "std/path/separator.ts";
@@ -16,7 +17,15 @@ const filesToConvert: Array<ParsedPath> = args._.map((f) =>
 );
 
 for (const file of filesToConvert) {
-  const filePath = `${file.dir}${SEP}${file.base}`;
+  let fileDirectory = file.dir;
+
+  // file is in the current directory
+  if (fileDirectory === "") {
+    fileDirectory = ".";
+
+  }
+
+  const filePath = `${fileDirectory}${SEP}${file.base}`;
 
   let fileInfo;
 
@@ -43,44 +52,38 @@ for (const file of filesToConvert) {
   if (extension === ".mp4" || extension === ".avi" || extension === ".flv") {
     console.log("Converting: ", filePath);
 
-    // convert external subs
-    await new Deno.Command("ffmpeg", {
-      args: [
-        "-i",
-        filePath,
+    const flagsCopyAllStreams = [
+      /**
+       * Copy all streams
+       */
+      "-map",
+      "0",
 
-        /**
-         * Copy all streams
-         */
-        "-map",
-        "0",
+      "-c:v",
+      "copy",
+      "-c:a",
+      "copy",
+    ];
 
-        "-c:v",
-        "copy",
-        "-c:a",
-        "copy",
-        "-sn", // no subs
-        `${file.dir + SEP + file.name}.mkv`,
-      ],
-    }).output();
+    const newFileName = `${fileDirectory + SEP + file.name}.mkv`;
+
+    // -sn = no subs
+    await spinner(() => $`ffmpeg -hide_banner -loglevel error -i ${filePath} ${flagsCopyAllStreams} -sn ${newFileName}`);
 
     console.log("Converted to mkv: ", filePath);
-    await cleanMKV(`${file.dir + SEP + file.name}.mkv`);
+    await cleanMKV(newFileName);
+
+    // todo: make removal explicit
     await Deno.remove(filePath);
   } else if (extension === ".mkv" || extension === ".webm") {
     await cleanMKV(filePath);
   } else if (extension === ".srt") {
-    const vttFilename = `${file.dir + SEP + file.name}.vtt`;
+    const vttFilename = `${fileDirectory + SEP + file.name}.vtt`;
 
     // convert external subs
-    await new Deno.Command("ffmpeg", {
-      args: [
-        "-i",
-        filePath,
-        vttFilename,
-      ],
-    }).output();
+    await spinner(() => $`ffmpeg -hide_banner -loglevel error -i ${filePath} ${vttFilename}`);
 
+    // todo: make removal explicit
     await Deno.remove(filePath);
     console.log("Converted to vtt: ", filePath);
     await cleanVTT(vttFilename);

@@ -1,5 +1,8 @@
 {
   "imports": {
-    "std/": "https://deno.land/std@0.199.0/"
-  }
+    "ffmpeg-static": "npm:ffmpeg-static@^5.2.0",
+    "std/": "https://deno.land/std@0.199.0/",
+    "zx": "npm:zx@^8.5.0"
+  },
+  "nodeModulesDir": "auto"
 }
