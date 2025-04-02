@@ -7,6 +7,7 @@ import { SEP } from "std/path/separator.ts";
 import { parse as parsePath } from "std/path/posix.ts";
 import cleanVTT from "./utils/cleanVTT.ts";
 import cleanMKV from "./utils/cleanMKV.ts";
+import ffmpeg from "ffmpeg-static";
 
 const args = parseFlags(Deno.args, {
   stopEarly: true, // populates "_"
@@ -62,13 +63,14 @@ for (const file of filesToConvert) {
       "copy",
       "-c:a",
       "copy",
+
+      "-sn", // no subs
     ];
 
     const newFileName = `${fileDirectory + SEP + file.name}.mkv`;
 
-    // -sn = no subs
     await spinner(() =>
-      $`ffmpeg -hide_banner -loglevel error -i ${filePath} ${flagsCopyAllStreams} -sn ${newFileName}`
+      $`${ffmpeg} -hide_banner -loglevel error -i ${filePath} ${flagsCopyAllStreams} -sn ${newFileName}`
     );
 
     console.log("Converted to mkv: ", filePath);
@@ -83,7 +85,7 @@ for (const file of filesToConvert) {
 
     // convert external subs
     await spinner(() =>
-      $`ffmpeg -hide_banner -loglevel error -i ${filePath} ${vttFilename}`
+      $`${ffmpeg} -hide_banner -loglevel error -i ${filePath} ${vttFilename}`
     );
 
     // todo: make removal explicit

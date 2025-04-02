@@ -13,7 +13,6 @@ File cleaner for video and subtitle files.
 
 - Prerequisites:
   - [Deno](https://deno.com/)
-  - ffmpeg
   - mediainfo
   - mkvpropedit
 

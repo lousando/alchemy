@@ -1,3 +1,5 @@
+import ffmpeg from "ffmpeg-static";
+
 export default async function cleanMKV(filePath = "") {
   console.log(`Cleaning ${filePath}`);
 
@@ -97,7 +99,7 @@ async function removeSubs(filePath = "") {
 
   // remove video subs and title metadata
   const removeSubsTask =
-    await $`ffmpeg -i ${filePath}.backup ${flags} ${filePath}`;
+    await $`${ffmpeg} -i ${filePath}.backup ${flags} ${filePath}`;
 
   if (removeSubsTask.exitCode === 0) {
     await Deno.remove(`${filePath}.backup`);
