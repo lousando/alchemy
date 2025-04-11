@@ -1,4 +1,4 @@
-import * as yaml from "std/yaml/mod.ts";
+import * as yaml from "@std/yaml";
 import nano from "npm:nano@10.1.2";
 
 const configFilePath = `${Deno.env.get("HOME")}/.clean_cow.yaml`;

@@ -1,7 +1,15 @@
 {
+  "name": "@lousando/alchemy",
+  "version": "0.1.0",
+  "exports": "./mod.ts",
+  "license": "MIT",
   "imports": {
+    "@std/crypto": "jsr:@std/crypto@^1.0.4",
+    "@std/encoding": "jsr:@std/encoding@^1.0.9",
+    "@std/flags": "jsr:@std/flags@^0.224.0",
+    "@std/path": "jsr:@std/path@^1.0.8",
+    "@std/yaml": "jsr:@std/yaml@^1.0.5",
     "ffmpeg-static": "npm:ffmpeg-static@^5.2.0",
-    "std/": "https://deno.land/std@0.199.0/",
     "zx": "npm:zx@^8.5.0"
   },
   "nodeModulesDir": "auto"

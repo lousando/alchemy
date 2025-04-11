@@ -1,10 +1,9 @@
 #!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env --allow-net --allow-sys
 
 import "zx/globals";
-import { parse as parseFlags } from "std/flags/mod.ts";
-import { ParsedPath } from "std/path/mod.ts";
-import { SEP } from "std/path/separator.ts";
-import { parse as parsePath } from "std/path/posix.ts";
+import { parse as parseFlags } from "@std/flags";
+import { ParsedPath, SEPARATOR } from "@std/path";
+import { parse as parsePath } from "@std/path";
 import cleanVTT from "./utils/cleanVTT.ts";
 import cleanMKV from "./utils/cleanMKV.ts";
 
@@ -24,7 +23,7 @@ for (const file of filesToConvert) {
     fileDirectory = ".";
   }
 
-  const filePath = `${fileDirectory}${SEP}${file.base}`;
+  const filePath = `${fileDirectory}${SEPARATOR}${file.base}`;
 
   let fileInfo;
 
@@ -64,7 +63,7 @@ for (const file of filesToConvert) {
       "copy",
     ];
 
-    const newFileName = `${fileDirectory + SEP + file.name}.mkv`;
+    const newFileName = `${fileDirectory + SEPARATOR + file.name}.mkv`;
 
     // -sn = no subs
     await spinner(() =>
@@ -79,7 +78,7 @@ for (const file of filesToConvert) {
   } else if (extension === ".mkv" || extension === ".webm") {
     await cleanMKV(filePath);
   } else if (extension === ".srt") {
-    const vttFilename = `${fileDirectory + SEP + file.name}.vtt`;
+    const vttFilename = `${fileDirectory + SEPARATOR + file.name}.vtt`;
 
     // convert external subs
     await spinner(() =>

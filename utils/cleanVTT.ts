@@ -1,7 +1,7 @@
 import VttToObject from "npm:vtt-cue-object";
 import { VttCue, WebVtt } from "npm:@audapolis/webvtt-writer@1.0.6";
-import { crypto } from "std/crypto/mod.ts";
-import { toHashString } from "std/crypto/to_hash_string.ts";
+import { crypto } from "@std/crypto/crypto";
+import { encodeHex } from "@std/encoding/hex";
 import { stopWordsDatabase, subTitleDatabase } from "./database.ts";
 
 // cache for current run
@@ -49,7 +49,7 @@ export default async function cleanVTT(filePath = "") {
             return resolve(error);
           }
 
-          const hash = toHashString(
+          const hash = encodeHex(
             await crypto.subtle.digest(
               "SHA-256",
               new TextEncoder().encode(cueText),
